@@ -1,112 +1,100 @@
 import pygame
 import sys
-import os
-import random
-import time
+from map import Maze
 import config
-import map
+from sprite import Player, Goal
+from screen_display import ScreenDisplay
+from BFS import BFSSolver
 
 # Initialize Pygame
 pygame.init()
 
 # Set up display
-map.window()
-WIDTH, HEIGHT = 800, 600
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+WIN = pygame.display.set_mode((config.COLS * config.CELL_SIZE, config.ROWS * config.CELL_SIZE))
+pygame.display.set_caption("Maze Game")
 
 # Set up fonts
-FONT = pygame.font.Font(None, 32)
+FONT = pygame.font.Font(None, 36)
+HOVER_FONT = pygame.font.Font(None, 48)  # 放大的字型
 
 # Set up clock
 CLOCK = pygame.time.Clock()
 
-# Set up maze
-maze = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
-    [1, 0, 1, 0, 1, 0, 0, 1, 0, 1],
-    [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-]
+# Initialize screen display
+screen_display = ScreenDisplay(WIN, FONT, HOVER_FONT)
 
-# Set up player
-player = {
-    "x": 1,
-    "y": 1,
-    "width": 20,
-    "height": 20,
-    "color": config.RED,
-    "speed": 5
-}
+# Initialize variables
+maze = None
+player = None
+goal = None
+game_mode = None
+algorithm = None
 
-# Set up goal
-goal = {
-    "x": 8,
-    "y": 5,
-    "width": 20,
-    "height": 20,
-    "color": config.GREEN
-}
-
-# Set helper functions
-def draw_maze():
-    for y in range(len(maze)):
-        for x in range(len(maze[y])):
-            if maze[y][x] == 1:
-                pygame.draw.rect(WIN, config.BLACK, (x * 40, y * 40, 40, 40))
-
-def draw_player():
-    pygame.draw.rect(WIN, player["color"], (player["x"] * 40, player["y"] * 40, player["width"], player["height"]))
-
-def draw_goal():
-    pygame.draw.rect(WIN, goal["color"], (goal["x"] * 40, goal["y"] * 40, goal["width"], goal["height"]))
-    text = FONT.render("GOAL", True, config.BLACK)
-    WIN.blit(text, (goal["x"] * 40, goal["y"] * 40))
-    
-def move_player():
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP]:
-        if maze[player["y"] - 1][player["x"]] == 0:
-            player["y"] -= 1
-    if keys[pygame.K_DOWN]:
-        if maze[player["y"] + 1][player["x"]] == 0:
-            player["y"] += 1
-    if keys[pygame.K_LEFT]:
-        if maze[player["y"]][player["x"] - 1] == 0:
-            player["x"] -= 1
-    if keys[pygame.K_RIGHT]:
-        if maze[player["y"]][player["x"] + 1] == 0:
-            player["x"] += 1
-
+# Check collision with goal
 def check_collision():
-    if player["x"] == goal["x"] and player["y"] == goal["y"]:
-        return True
-    return False
+    return pygame.sprite.collide_rect(player, goal)
 
+# Main game loop
 def main():
-    running = True
-    while running:
-        WIN.fill(config.WHITE)
-        draw_maze()
-        draw_player()
-        draw_goal()
-        move_player()
-        if check_collision():
-            text = FONT.render("YOU WIN!", True, config.BLACK)
-            WIN.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
-            pygame.display.update()
-            time.sleep(2)
-            running = False
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+    global maze, player, goal, game_mode, algorithm
+
+    # Display menu and get game mode
+    game_mode = screen_display.display_menu()
+
+    if game_mode == 'auto':
+        algorithm = screen_display.display_algorithm_menu()
+        print(f"Selected Algorithm: {algorithm}")  # Debugging line for selected algorithm
+
+    # Initialize maze, player, and goal after selecting mode
+    maze = Maze(config.ROWS, config.COLS, config.CELL_SIZE)
+    player = Player(1, 1)
+    goal = Goal(5, 1)
+
+    if game_mode == 'manual':
+        running = True
+        while running:
+            WIN.fill(config.WHITE)
+            maze.draw(WIN, [config.WHITE, config.BLACK])
+            all_sprites = pygame.sprite.Group()
+            all_sprites.add(player, goal)
+            all_sprites.draw(WIN)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        player.move(0, -1, maze)
+                    elif event.key == pygame.K_DOWN:
+                        player.move(0, 1, maze)
+                    elif event.key == pygame.K_LEFT:
+                        player.move(-1, 0, maze)
+                    elif event.key == pygame.K_RIGHT:
+                        player.move(1, 0, maze)
+
+            if check_collision():
+                screen_display.display_win_screen()
                 running = False
-        pygame.display.update()
-        CLOCK.tick(60)
+
+            pygame.display.update()
+            CLOCK.tick(60)
+
+    elif game_mode == 'auto':
+        if algorithm == 'BFS':
+            bfs_solver = BFSSolver(maze.grid, config.CELL_SIZE, WIN)
+            path = bfs_solver.solve_with_animation((1, 1), (5, 1), player)
+            if path:
+                screen_display.display_win_screen()
+            else:
+                WIN.fill(config.WHITE)
+                text = FONT.render("No Solution Found!", True, config.BLACK)
+                text_rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
+                WIN.blit(text, text_rect)
+                pygame.display.update()
+                pygame.time.wait(2000)
+
     pygame.quit()
     sys.exit()
 
 if __name__ == "__main__":
     main()
-

@@ -1,4 +1,9 @@
-
+# display settings
+CELL_SIZE = 40
+ROWS = 15
+COLS = 15
+WIDTH = ROWS * CELL_SIZE
+HEIGHT = COLS * CELL_SIZE
 
 # colors
 WHITE = (255, 255, 255)
