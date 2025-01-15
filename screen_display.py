@@ -114,3 +114,23 @@ class ScreenDisplay:
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
+    
+    def display_warning_screen(self, messages):
+        """
+        Displays a warning screen with multiple lines of text.
+        
+        :param messages: A list of strings, each representing one line of text.
+        """
+        self.win.fill(config.WHITE)
+        
+        # 計算起始位置，讓所有文字在畫面上垂直居中
+        total_height = len(messages) * self.font.get_height()
+        start_y = config.HEIGHT // 2 - total_height // 2
+        
+        for i, line in enumerate(messages):
+            text = self.font.render(line, True, config.BLACK)
+            text_rect = text.get_rect(center=(config.WIDTH // 2, start_y + i * self.font.get_height()))
+            self.win.blit(text, text_rect)
+        
+        pygame.display.update()
+        pygame.time.wait(2000)

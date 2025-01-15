@@ -5,6 +5,7 @@ import config
 from sprite import Player, Goal
 from screen_display import ScreenDisplay
 from BFS import BFSSolver
+from DFS import DFSSolver
 
 # Initialize Pygame
 pygame.init()
@@ -33,6 +34,40 @@ algorithm = None
 # Check collision with goal
 def check_collision():
     return pygame.sprite.collide_rect(player, goal)
+
+# Handle maze solving
+def handle_algorithm(algorithm, maze, config, WIN, FONT, screen_display, player):
+    """Handle maze solving for BFS or DFS algorithms."""
+    if algorithm == 'BFS':
+        screen_display.display_warning_screen(config.MESSAGES["warning"])
+        pygame.time.delay(config.DELAYS["warning_screen"])  # 使用警告畫面延遲
+        solver = BFSSolver(maze.grid, config.CELL_SIZE, WIN)
+    elif algorithm == 'DFS':
+        solver = DFSSolver(maze.grid, config.CELL_SIZE, WIN)
+    else:
+        return
+
+    path = solver.solve_with_animation(config.START, config.GOAL, player)
+
+    if path:
+        screen_display.display_win_screen()
+    else:
+        display_no_solution(WIN, FONT, config)
+
+# Display 'No Solution Found' message
+def display_no_solution(WIN, FONT, config):
+    """Display 'No Solution Found' message."""
+    WIN.fill(config.WHITE)
+    text = FONT.render(config.MESSAGES["no_solution"], True, config.BLACK)
+    text_rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
+    WIN.blit(text, text_rect)
+    pygame.display.update()
+    pygame.time.delay(config.DELAYS["no_solution"])  # 使用無解畫面延遲
+
+# Solve the maze based on the chosen algorithm
+def solve_maze(algorithm, maze, config, WIN, FONT, screen_display, player):
+    """Solve the maze based on the chosen algorithm."""
+    handle_algorithm(algorithm, maze, config, WIN, FONT, screen_display, player)
 
 # Main game loop
 def main():
@@ -80,18 +115,7 @@ def main():
             CLOCK.tick(60)
 
     elif game_mode == 'auto':
-        if algorithm == 'BFS':
-            bfs_solver = BFSSolver(maze.grid, config.CELL_SIZE, WIN)
-            path = bfs_solver.solve_with_animation((1, 1), (5, 1), player)
-            if path:
-                screen_display.display_win_screen()
-            else:
-                WIN.fill(config.WHITE)
-                text = FONT.render("No Solution Found!", True, config.BLACK)
-                text_rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
-                WIN.blit(text, text_rect)
-                pygame.display.update()
-                pygame.time.wait(2000)
+        solve_maze(algorithm, maze, config, WIN, FONT, screen_display, player)
 
     pygame.quit()
     sys.exit()

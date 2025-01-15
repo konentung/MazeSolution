@@ -1,3 +1,7 @@
+# postion: root
+START = (1, 1)
+GOAL = (1, 11)
+
 # display settings
 CELL_SIZE = 40
 ROWS = 15
@@ -28,3 +32,19 @@ GOLD = (255, 215, 0)
 SILVER = (192, 192, 192)
 BRONZE = (205, 127, 50)
 CYAN = (0, 255, 255)
+
+# message
+MESSAGES = {
+    "warning": [
+        "Please wait for the animation to finish...",
+        "Avoid closing the window abruptly."
+    ],
+    "no_solution": "No Solution Found!"
+}
+
+# delay
+DELAYS = {
+    "warning_screen": 2000,  # 警告畫面延遲
+    "no_solution": 3000,     # 無解畫面延遲
+    "algorithm_step": 10,   # 演算法動畫延遲
+}

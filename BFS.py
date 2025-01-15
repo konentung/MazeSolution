@@ -14,27 +14,37 @@ class BFSSolver:
         visited.add(start)
         parent = {start: None}
 
+        directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]  # 上下左右
+
         while queue:
             current = queue.popleft()
 
             # Render current step
             self.animate_step(current, visited, player, goal)
 
-            if current == goal:
-                path = []
-                while current:
-                    path.append(current)
-                    current = parent[current]
-                return path[::-1]  # 返回從起點到終點的路徑
-
             x, y = current
-            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:  # 上下左右
+            for dx, dy in directions:  # 檢查每個方向
                 nx, ny = x + dx, y + dy
+
+                # 動畫：標示目前正在檢查的方向
+                self.highlight_direction((x, y), (dx, dy), visited)
+
                 if (0 <= nx < len(self.maze[0]) and 0 <= ny < len(self.maze) and
                         self.maze[ny][nx] == 0 and (nx, ny) not in visited):
                     queue.append((nx, ny))
                     visited.add((nx, ny))
                     parent[(nx, ny)] = current
+
+                # 動畫：清除方向標示
+                self.clear_highlight((x, y), (dx, dy), visited)
+
+            if current == goal:
+                # 找到路徑後還原並返回路徑
+                path = []
+                while current:
+                    path.append(current)
+                    current = parent[current]
+                return path[::-1]
 
         return None  # 無解
 
@@ -63,7 +73,7 @@ class BFSSolver:
         # Draw goal
         pygame.draw.rect(
             self.win, config.GREEN,
-            (goal.rect.x, goal.rect.y, goal.rect.width, goal.rect.height)
+            (goal[0] * self.cell_size, goal[1] * self.cell_size, self.cell_size, self.cell_size)
         )
 
         # Update player position
@@ -74,4 +84,40 @@ class BFSSolver:
         all_sprites.draw(self.win)
 
         pygame.display.update()
-        pygame.time.delay(200)  # 每步延遲 200 毫秒
+        pygame.time.delay(config.DELAYS["algorithm_step"])  # 使用 algorithm_step 延遲
+
+
+    def highlight_direction(self, current, direction, visited):
+        """
+        標示當前點正要檢查的方向。
+        """
+        x, y = current
+        dx, dy = direction
+        highlight_x, highlight_y = x + dx, y + dy
+
+        if 0 <= highlight_x < len(self.maze[0]) and 0 <= highlight_y < len(self.maze):
+            # 如果該點已經被訪問過，使用淺藍色
+            color = config.LIGHT_BLUE if (highlight_x, highlight_y) in visited else config.YELLOW
+            pygame.draw.rect(
+                self.win, color,  # 用淺藍色或黃色標示
+                (highlight_x * self.cell_size, highlight_y * self.cell_size, self.cell_size, self.cell_size)
+            )
+            pygame.display.update()
+            pygame.time.delay(config.DELAYS["algorithm_step"])  # 使用 algorithm_step 延遲
+    
+    def clear_highlight(self, current, direction, visited):
+        """
+        清除當前點正在檢查的方向標示。
+        """
+        x, y = current
+        dx, dy = direction
+        highlight_x, highlight_y = x + dx, y + dy
+
+        if 0 <= highlight_x < len(self.maze[0]) and 0 <= highlight_y < len(self.maze):
+            # 如果該點已經被訪問過，重新填充淺藍色；否則使用白色
+            color = config.LIGHT_BLUE if (highlight_x, highlight_y) in visited else config.WHITE
+            pygame.draw.rect(
+                self.win, color,  # 用淺藍色或白色清除標示
+                (highlight_x * self.cell_size, highlight_y * self.cell_size, self.cell_size, self.cell_size)
+            )
+            pygame.display.update()
