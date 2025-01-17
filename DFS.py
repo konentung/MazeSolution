@@ -83,7 +83,7 @@ class DFSSolver:
         all_sprites.draw(self.win)
 
         pygame.display.update()
-        pygame.time.delay(500)  # 每步延遲 500 毫秒
+        pygame.time.delay(config.DELAYS["algorithm_step"])  # 使用 algorithm_step 延遲
 
     def highlight_direction(self, current, direction, visited):
         """
@@ -101,21 +101,25 @@ class DFSSolver:
                 (highlight_x * self.cell_size, highlight_y * self.cell_size, self.cell_size, self.cell_size)
             )
             pygame.display.update()
-            pygame.time.delay(300)  # 延遲顯示動畫效果
+            pygame.time.delay(config.DELAYS["algorithm_step"])  # 使用 algorithm_step 延遲
 
     def clear_highlight(self, current, direction, visited):
         """
-        清除當前點檢查方向的標示。
+        清除當前點正在檢查的方向標示，恢復成原本顏色。
         """
         x, y = current
         dx, dy = direction
         highlight_x, highlight_y = x + dx, y + dy
 
         if 0 <= highlight_x < len(self.maze[0]) and 0 <= highlight_y < len(self.maze):
-            # 如果該點已經被訪問過，恢復為淺藍色
-            color = config.LIGHT_BLUE if (highlight_x, highlight_y) in visited else (
-                config.BLACK if self.maze[highlight_y][highlight_x] == 1 else config.WHITE
-            )
+            # 根據迷宮格子的狀態恢復顏色
+            if self.maze[highlight_y][highlight_x] == 1:
+                color = config.BLACK  # 牆壁
+            elif (highlight_x, highlight_y) in visited:
+                color = config.LIGHT_BLUE  # 已訪問
+            else:
+                color = config.WHITE  # 空白未訪問
+
             pygame.draw.rect(
                 self.win, color,
                 (highlight_x * self.cell_size, highlight_y * self.cell_size, self.cell_size, self.cell_size)

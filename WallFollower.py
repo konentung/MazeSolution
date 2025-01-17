@@ -1,52 +1,55 @@
 import pygame
-from collections import deque
 import config
 
-class BFSSolver:
+class WallFollowerSolver:
     def __init__(self, maze, cell_size, win):
         self.maze = maze
         self.cell_size = cell_size
         self.win = win
 
     def solve_with_animation(self, start, goal, player):
-        queue = deque([start])
+        x, y = start
+        direction = (0, 1)  # 初始方向：向下
+
         visited = set()
-        visited.add(start)
-        parent = {start: None}
+        path = [start]
 
-        directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]  # 上下左右
+        directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]  # 上右下左
 
-        while queue:
-            current = queue.popleft()
+        while (x, y) != goal:
+            visited.add((x, y))
+            
+            # 測試右邊是否有牆
+            direction_idx = directions.index(direction)
+            right_idx = (direction_idx + 1) % 4
+            right_direction = directions[right_idx]
+            nx, ny = x + right_direction[0], y + right_direction[1]
 
-            # Render current step
-            self.animate_step(current, visited, player, goal)
+            self.highlight_direction((x, y), right_direction, visited)
 
-            x, y = current
-            for dx, dy in directions:  # 檢查每個方向
-                nx, ny = x + dx, y + dy
+            if 0 <= nx < len(self.maze[0]) and 0 <= ny < len(self.maze) and self.maze[ny][nx] == 0:
+                # 如果右側無牆，轉向右側並前進
+                direction = right_direction
+                x, y = nx, ny
+            else:
+                # 右側有牆，沿著牆前進
+                nx, ny = x + direction[0], y + direction[1]
+                self.highlight_direction((x, y), direction, visited)
+                if 0 <= nx < len(self.maze[0]) and 0 <= ny < len(self.maze) and self.maze[ny][nx] == 0:
+                    x, y = nx, ny
+                else:
+                    # 如果前方有牆，左轉
+                    left_idx = (direction_idx - 1) % 4
+                    direction = directions[left_idx]
 
-                # 動畫：標示目前正在檢查的方向
-                self.highlight_direction((x, y), (dx, dy), visited)
+            self.clear_highlight((x, y), right_direction, visited)
 
-                if (0 <= nx < len(self.maze[0]) and 0 <= ny < len(self.maze) and
-                        self.maze[ny][nx] == 0 and (nx, ny) not in visited):
-                    queue.append((nx, ny))
-                    visited.add((nx, ny))
-                    parent[(nx, ny)] = current
+            path.append((x, y))
 
-                # 動畫：清除方向標示
-                self.clear_highlight((x, y), (dx, dy), visited)
+            # 動畫渲染
+            self.animate_step((x, y), visited, player, goal)
 
-            if current == goal:
-                # 找到路徑後還原並返回路徑
-                path = []
-                while current:
-                    path.append(current)
-                    current = parent[current]
-                return path[::-1]
-
-        return None  # 無解
+        return path
 
     def animate_step(self, current, visited, player, goal):
         self.win.fill(config.WHITE)
@@ -86,7 +89,6 @@ class BFSSolver:
         pygame.display.update()
         pygame.time.delay(config.DELAYS["algorithm_step"])  # 使用 algorithm_step 延遲
 
-
     def highlight_direction(self, current, direction, visited):
         """
         標示當前點正要檢查的方向。
@@ -104,7 +106,7 @@ class BFSSolver:
             )
             pygame.display.update()
             pygame.time.delay(config.DELAYS["algorithm_step"])  # 使用 algorithm_step 延遲
-    
+
     def clear_highlight(self, current, direction, visited):
         """
         清除當前點正在檢查的方向標示，恢復成原本顏色。

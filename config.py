@@ -46,5 +46,8 @@ MESSAGES = {
 DELAYS = {
     "warning_screen": 2000,  # 警告畫面延遲
     "no_solution": 3000,     # 無解畫面延遲
-    "algorithm_step": 10,   # 演算法動畫延遲
+    "algorithm_step": 100,   # 演算法動畫延遲
+    "end" : 5000,
 }
+
+ALGORITHMS = ["Dijkstra", "WallFollower", "DeadEndFilling", "BFS", "DFS", "A*", "Back"]

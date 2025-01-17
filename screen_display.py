@@ -14,10 +14,12 @@ class ScreenDisplay:
 
         manual_option = self.font.render("Manual Solve", True, config.BLACK)
         auto_option = self.font.render("Auto Solve", True, config.BLACK)
+        back_option = self.font.render("Back", True, config.BLACK)
 
         title_rect = title.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 4))
         manual_rect = manual_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
         auto_rect = auto_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + 50))
+        back_rect = back_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + 100))
 
         while True:
             self.win.fill(config.WHITE)
@@ -25,22 +27,31 @@ class ScreenDisplay:
 
             # 檢查滑鼠是否懸停在按鈕上
             mouse_pos = pygame.mouse.get_pos()
+
             if manual_rect.collidepoint(mouse_pos):
                 manual_option = self.hover_font.render("Manual Solve", True, config.BLACK)
-                manual_rect = manual_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
             else:
                 manual_option = self.font.render("Manual Solve", True, config.BLACK)
-                manual_rect = manual_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
 
             if auto_rect.collidepoint(mouse_pos):
                 auto_option = self.hover_font.render("Auto Solve", True, config.BLACK)
-                auto_rect = auto_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + 50))
             else:
                 auto_option = self.font.render("Auto Solve", True, config.BLACK)
-                auto_rect = auto_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + 50))
 
+            if back_rect.collidepoint(mouse_pos):
+                back_option = self.hover_font.render("QUIT", True, config.BLACK)
+            else:
+                back_option = self.font.render("QUIT", True, config.BLACK)
+
+            # 更新按鈕的矩形位置
+            manual_rect = manual_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
+            auto_rect = auto_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + 50))
+            back_rect = back_option.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + 100))
+
+            # 繪製按鈕
             self.win.blit(manual_option, manual_rect)
             self.win.blit(auto_option, auto_rect)
+            self.win.blit(back_option, back_rect)
 
             pygame.display.update()
 
@@ -54,12 +65,15 @@ class ScreenDisplay:
                         return 'manual'
                     elif auto_rect.collidepoint(mouse_pos):
                         return 'auto'
+                    elif back_rect.collidepoint(mouse_pos):
+                        return 'QUIT'
+
 
     def display_algorithm_menu(self):
         self.win.fill(config.WHITE)
         title = self.font.render("Select Solving Algorithm", True, config.BLACK)
 
-        options = ["Dijkstra", "Kruskal", "Greedy", "BFS", "DFS"]
+        options = config.ALGORITHMS
         option_rects = []
 
         title_rect = title.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 4))
@@ -80,10 +94,10 @@ class ScreenDisplay:
             for i, (text, rect) in enumerate(option_rects):
                 if rect.collidepoint(mouse_pos):
                     text = self.hover_font.render(options[i], True, config.BLACK)
-                    rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + i * 50))
+                    rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + i * 50 - 50))
                 else:
                     text = self.font.render(options[i], True, config.BLACK)
-                    rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + i * 50))
+                    rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2 + i * 50 - 50))
                 option_rects[i] = (text, rect)
                 self.win.blit(text, rect)
 
@@ -133,4 +147,4 @@ class ScreenDisplay:
             self.win.blit(text, text_rect)
         
         pygame.display.update()
-        pygame.time.wait(2000)
+        pygame.time.wait(config.DELAYS["warning_screen"])

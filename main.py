@@ -6,6 +6,10 @@ from sprite import Player, Goal
 from screen_display import ScreenDisplay
 from BFS import BFSSolver
 from DFS import DFSSolver
+from Dijkstra import DijkstraSolver
+from WallFollower import WallFollowerSolver
+from AStar import AStarSolver
+from DeadEndFilling import DeadEndFillingSolver
 
 # Initialize Pygame
 pygame.init()
@@ -16,7 +20,7 @@ pygame.display.set_caption("Maze Game")
 
 # Set up fonts
 FONT = pygame.font.Font(None, 36)
-HOVER_FONT = pygame.font.Font(None, 48)  # 放大的字型
+HOVER_FONT = pygame.font.Font(None, 48)  # Enlarged font for hover effect
 
 # Set up clock
 CLOCK = pygame.time.Clock()
@@ -24,101 +28,122 @@ CLOCK = pygame.time.Clock()
 # Initialize screen display
 screen_display = ScreenDisplay(WIN, FONT, HOVER_FONT)
 
-# Initialize variables
+# Global variables
 maze = None
 player = None
 goal = None
-game_mode = None
-algorithm = None
 
-# Check collision with goal
+# Check collision between the player and the goal
 def check_collision():
     return pygame.sprite.collide_rect(player, goal)
 
-# Handle maze solving
-def handle_algorithm(algorithm, maze, config, WIN, FONT, screen_display, player):
-    """Handle maze solving for BFS or DFS algorithms."""
-    if algorithm == 'BFS':
-        screen_display.display_warning_screen(config.MESSAGES["warning"])
-        pygame.time.delay(config.DELAYS["warning_screen"])  # 使用警告畫面延遲
-        solver = BFSSolver(maze.grid, config.CELL_SIZE, WIN)
-    elif algorithm == 'DFS':
-        solver = DFSSolver(maze.grid, config.CELL_SIZE, WIN)
-    else:
-        return
+# Handle maze-solving algorithms
+def handle_algorithm(maze, config, WIN, FONT, screen_display, player):
+    """
+    Handle solving the maze using BFS or DFS algorithms, with the option to return.
+    """
+    while True:
+        # Display algorithm selection menu
+        algorithm = screen_display.display_algorithm_menu()
 
-    path = solver.solve_with_animation(config.START, config.GOAL, player)
+        if algorithm == 'Back':  # Return to the main menu
+            return
 
-    if path:
-        screen_display.display_win_screen()
-    else:
-        display_no_solution(WIN, FONT, config)
+        solver = None
+        if algorithm == 'BFS':
+            screen_display.display_warning_screen(config.MESSAGES["warning"])
+            solver = BFSSolver(maze.grid, config.CELL_SIZE, WIN)
+        if algorithm == 'DFS':
+            screen_display.display_warning_screen(config.MESSAGES["warning"])
+            solver = DFSSolver(maze.grid, config.CELL_SIZE, WIN)
+        if algorithm == 'Dijkstra':
+            screen_display.display_warning_screen(config.MESSAGES["warning"])
+            solver = DijkstraSolver(maze.grid, config.CELL_SIZE, WIN)
+        if algorithm == 'WallFollower':
+            screen_display.display_warning_screen(config.MESSAGES["warning"])
+            solver = WallFollowerSolver(maze.grid, config.CELL_SIZE, WIN)
+        if algorithm == 'A*':
+            screen_display.display_warning_screen(config.MESSAGES["warning"])
+            solver = AStarSolver(maze.grid, config.CELL_SIZE, WIN)
+        if algorithm == 'DeadEndFilling':
+            screen_display.display_warning_screen(config.MESSAGES["warning"])
+            solver = DeadEndFillingSolver(maze.grid, config.CELL_SIZE, WIN)
 
-# Display 'No Solution Found' message
+        if solver:  # Ensure solver is initialized
+            path = solver.solve_with_animation(config.START, config.GOAL, player)
+            if path:
+                screen_display.display_win_screen()
+            else:
+                display_no_solution(WIN, FONT, config)
+            return
+        else:
+            print("Invalid algorithm selection. Please try again.")
+
+# Display "No Solution Found" message
 def display_no_solution(WIN, FONT, config):
-    """Display 'No Solution Found' message."""
+    """
+    Display a message indicating that no solution was found.
+    """
     WIN.fill(config.WHITE)
     text = FONT.render(config.MESSAGES["no_solution"], True, config.BLACK)
     text_rect = text.get_rect(center=(config.WIDTH // 2, config.HEIGHT // 2))
     WIN.blit(text, text_rect)
     pygame.display.update()
-    pygame.time.delay(config.DELAYS["no_solution"])  # 使用無解畫面延遲
-
-# Solve the maze based on the chosen algorithm
-def solve_maze(algorithm, maze, config, WIN, FONT, screen_display, player):
-    """Solve the maze based on the chosen algorithm."""
-    handle_algorithm(algorithm, maze, config, WIN, FONT, screen_display, player)
+    pygame.time.delay(config.DELAYS["no_solution"])  # Delay for no solution screen
 
 # Main game loop
 def main():
-    global maze, player, goal, game_mode, algorithm
+    global maze, player, goal
 
-    # Display menu and get game mode
-    game_mode = screen_display.display_menu()
+    while True:  # Main menu loop
+        # Display the main menu to select the game mode
+        game_mode = screen_display.display_menu()
 
-    if game_mode == 'auto':
-        algorithm = screen_display.display_algorithm_menu()
-        print(f"Selected Algorithm: {algorithm}")  # Debugging line for selected algorithm
+        # Initialize maze, player, and goal
+        maze = Maze(config.ROWS, config.COLS, config.CELL_SIZE)
+        player = Player(1, 1)
+        goal = Goal(5, 1)
 
-    # Initialize maze, player, and goal after selecting mode
-    maze = Maze(config.ROWS, config.COLS, config.CELL_SIZE)
-    player = Player(1, 1)
-    goal = Goal(5, 1)
+        if game_mode == 'manual':
+            # Manual game loop
+            running = True
+            while running:
+                WIN.fill(config.WHITE)
+                maze.draw(WIN, [config.WHITE, config.BLACK])
+                all_sprites = pygame.sprite.Group()
+                all_sprites.add(player, goal)
+                all_sprites.draw(WIN)
 
-    if game_mode == 'manual':
-        running = True
-        while running:
-            WIN.fill(config.WHITE)
-            maze.draw(WIN, [config.WHITE, config.BLACK])
-            all_sprites = pygame.sprite.Group()
-            all_sprites.add(player, goal)
-            all_sprites.draw(WIN)
+                # Handle events
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_UP:
+                            player.move(0, -1, maze)
+                        elif event.key == pygame.K_DOWN:
+                            player.move(0, 1, maze)
+                        elif event.key == pygame.K_LEFT:
+                            player.move(-1, 0, maze)
+                        elif event.key == pygame.K_RIGHT:
+                            player.move(1, 0, maze)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                # Check for goal collision
+                if check_collision():
+                    screen_display.display_win_screen()
                     running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        player.move(0, -1, maze)
-                    elif event.key == pygame.K_DOWN:
-                        player.move(0, 1, maze)
-                    elif event.key == pygame.K_LEFT:
-                        player.move(-1, 0, maze)
-                    elif event.key == pygame.K_RIGHT:
-                        player.move(1, 0, maze)
 
-            if check_collision():
-                screen_display.display_win_screen()
-                running = False
+                pygame.display.update()
+                CLOCK.tick(60)
 
-            pygame.display.update()
-            CLOCK.tick(60)
-
-    elif game_mode == 'auto':
-        solve_maze(algorithm, maze, config, WIN, FONT, screen_display, player)
-
-    pygame.quit()
-    sys.exit()
+        elif game_mode == 'auto':
+            # Auto mode - solve the maze
+            handle_algorithm(maze, config, WIN, FONT, screen_display, player)
+        
+        elif game_mode == 'QUIT':
+            pygame.quit()
+            sys.exit()
 
 if __name__ == "__main__":
     main()
