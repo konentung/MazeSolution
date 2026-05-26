@@ -169,3 +169,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# VS Code
+#   編輯器個人設定與除錯設定不納入版控（含本機 Python 直譯器路徑）
+.vscode/

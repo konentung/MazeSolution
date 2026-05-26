@@ -74,6 +74,35 @@ mazeSolution/
    python main.py
    ```
 
+## 🐞 VS Code 除錯設定
+
+`.vscode/` 已被加入 `.gitignore`，不會納入版控（其中包含與本機環境相關的 Python 直譯器路徑）。若要在 VS Code 中進行除錯，請於專案根目錄自行建立 `.vscode/launch.json`：
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: main.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      // 改成你本機的 Python 直譯器路徑（建議使用安裝了 pygame 的虛擬環境）
+      "python": "/path/to/your/python",
+      "console": "integratedTerminal"
+    }
+  ]
+}
+```
+
+設定步驟：
+
+1. 先安裝 [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) 與 [Python Debugger](https://marketplace.visualstudio.com/items?itemName=ms-python.debugpy) 擴充套件。
+2. 用 `which python`（macOS/Linux）或 `where python`（Windows）查出直譯器路徑，填入上方 `python` 欄位。
+3. 開啟 `main.py`，按 `F5` 即可開始除錯。
+
+> 💡 也可以直接在 VS Code 開啟 `main.py` 後，點選右上角的「執行與偵錯」並選擇 Python File，VS Code 會自動產生 `launch.json`。
+
 ## 🎮 使用說明
 
 ### 遊戲操作
@@ -134,24 +163,6 @@ mazeSolution/
 - 動畫延遲時間
 - 演算法列表
 
-## 🐛 故障排除
-
-### 常見問題
-
-1. **Pygame 安裝失敗**
-   ```bash
-   pip install --upgrade pip
-   pip install pygame==2.5.2
-   ```
-
-2. **程式運行緩慢**
-   - 調整 `config.py` 中的延遲時間
-   - 減少迷宮大小
-
-3. **顯示問題**
-   - 確保螢幕解析度足夠
-   - 檢查 Pygame 版本兼容性
-
 ## 🤝 貢獻指南
 
 歡迎提交 Issue 和 Pull Request！
@@ -172,7 +183,6 @@ mazeSolution/
 
 - 提交 Issue
 - 發送 Email
-- 參與討論
 
 ---
 
